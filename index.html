@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>검수판독</title>
+<style>
+  :root {
+    --bg:       #f0f2f5;
+    --surface:  #ffffff;
+    --card:     #ffffff;
+    --border:   #e0e4ee;
+    --accent:   #3b6ef6;
+    --green:    #1db870;
+    --yellow:   #f0a500;
+    --red:      #e53935;
+    --text:     #1a1d2e;
+    --muted:    #6b7280;
+    --radius:   12px;
+    --font:     'Pretendard', 'Noto Sans KR', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── 헤더 ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+
+  /* ── 탭 ── */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 10px 18px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── 본문 ── */
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  /* ── 검색 바 ── */
+  .search-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .search-bar input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+
+  /* ── 버튼 ── */
+  .btn {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+    white-space: nowrap;
+  }
+  .btn:active { opacity: .7; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-green   { background: var(--green);  color: #fff; }
+  .btn-yellow  { background: var(--yellow); color: #000; }
+  .btn-red     { background: var(--red);    color: #fff; }
+  .btn-ghost   { background: var(--card);   color: var(--text); border: 1px solid var(--border); }
+
+  /* ── 카드 리스트 ── */
+  .list-container { display: flex; flex-direction: column; gap: 10px; }
+
+  .item-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0;
+    cursor: pointer;
+    transition: box-shadow .15s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .item-card:active { box-shadow: 0 0 0 2px var(--accent); }
+  .item-card.done   { border-left: 4px solid var(--green); }
+  .item-card.reverted { border-left: 4px solid var(--yellow); }
+
+  /* 사진 썸네일 영역 */
+  .card-thumb {
+    width: 72px;
+    min-height: 80px;
+    background: #f5f6fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+  .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .card-thumb-placeholder { font-size: 28px; color: #c5cad8; }
+
+  /* 카드 내용 */
+  .card-body {
+    flex: 1;
+    padding: 11px 12px;
+    min-width: 0;
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .card-order { font-weight: 700; font-size: 15px; color: var(--text); }
+  .card-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .card-status.done    { background: #e6f9ef; color: var(--green); }
+  .card-status.pending { background: #eef2ff; color: var(--accent); }
+  .card-status.reverted{ background: #fff8e6; color: var(--yellow); }
+
+  .card-name { font-size: 13px; color: var(--text); margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-info { display: flex; flex-wrap: wrap; gap: 5px; font-size: 11px; color: var(--muted); }
+  .card-info span { background: #f5f6fa; padding: 2px 7px; border-radius: 4px; }
+
+  /* ── 체크 토글 ── */
+  .check-toggle {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  }
+  .check-toggle.checked {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+
+  /* ── 상세 패널 (슬라이드업) ── */
+  .detail-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 200;
+    align-items: flex-end;
+  }
+  .detail-overlay.open { display: flex; }
+
+  .detail-panel {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 20px 16px 32px;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .detail-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  .detail-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; color: var(--muted); margin-bottom: 5px; display: block; font-weight: 600; }
+  .form-input {
+    width: 100%;
+    background: #f8f9fc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--accent); background: #fff; }
+  .form-input[readonly] { color: var(--muted); cursor: default; background: #f0f2f5; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .detail-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .detail-actions .btn { flex: 1; padding: 12px; font-size: 14px; }
+
+  /* ── OCR 모달 ── */
+  .ocr-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.8);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .ocr-modal.open { display: flex; }
+  .ocr-box {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    width: 100%;
+    max-width: 420px;
+  }
+  .ocr-box h3 { margin-bottom: 14px; font-size: 16px; }
+  .ocr-preview {
+    width: 100%;
+    height: 180px;
+    background: var(--card);
+    border-radius: 8px;
+    border: 2px dashed var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 13px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    cursor: pointer;
+    position: relative;
+  }
+  .ocr-preview img { width: 100%; height: 100%; object-fit: contain; }
+  .ocr-preview input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .ocr-result {
+    background: var(--card);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: center;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .ocr-actions { display: flex; gap: 8px; }
+  .ocr-actions .btn { flex: 1; }
+
+  /* ── 새 행 추가 폼 ── */
+  .add-form {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .add-form.open { display: block; }
+  .add-form-title {
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* ── 로딩/토스트 ── */
+  .loading {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+  .loading.show { display: flex; }
+  .loading-box {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px 28px;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    z-index: 600;
+    transition: transform .3s;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error   { border-color: var(--red);   color: var(--red); }
+
+  /* ── 재고조회 탭 ── */
+  .stock-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .stock-card .sku   { font-weight: 700; margin-bottom: 4px; }
+  .stock-card .meta  { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+  .stock-card .qty   { font-size: 20px; font-weight: 700; color: var(--accent); float: right; }
+
+  /* ── 빈 상태 ── */
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 48px 0;
+    font-size: 14px;
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+
+  /* ── 뱃지 ── */
+  .badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="header">
+  <h1>📦 검수판독</h1>
+  <div class="header-right">
+    <button class="btn btn-ghost" onclick="refreshList()">↺ 새로고침</button>
+    <button class="btn btn-primary" onclick="openOcr()">📷 OCR</button>
+  </div>
+</div>
+
+<!-- 탭 -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('list', this)">
+    미처리 목록 <span id="pendingBadge" class="badge" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('all', this)">전체 목록</button>
+  <button class="tab-btn" onclick="switchTab('stock', this)">재고조회</button>
+</div>
+
+<!-- ── 미처리 목록 탭 ── -->
+<div id="page-list" class="page active">
+  <div class="search-bar">
+    <input id="searchList" type="text" placeholder="입력번호 / SKU / 품명 검색..." oninput="renderList()">
+    <button class="btn btn-green" onclick="toggleAddForm()">+ 추가</button>
+  </div>
+
+  <!-- 수기 추가 폼 -->
+  <div id="addForm" class="add-form">
+    <div class="add-form-title">
+      <span>새 항목 추가</span>
+      <button class="btn btn-ghost" onclick="toggleAddForm()" style="padding:4px 10px;font-size:12px">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">입력번호 (A열)</label>
+        <div style="display:flex;gap:6px">
+          <input id="add_orderNo" class="form-input" placeholder="송장번호" style="flex:1">
+          <label style="cursor:pointer;margin:0">
+            <input type="file" accept="image/*" capture="environment" style="display:none"
+                   onchange="handleAddFormOcr(event)">
+            <div class="btn btn-primary" style="padding:10px 12px;font-size:16px">📷</div>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">전산품번 (C열)</label>
+        <input id="add_sku" class="form-input" placeholder="SKU">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">실수량 (E열)</label>
+        <input id="add_qty" class="form-input" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">로케이션 (F열)</label>
+        <input id="add_loc" class="form-input" placeholder="A-01">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">상태 (G열)</label>
+        <input id="add_status" class="form-input" placeholder="정상:A">
+      </div>
+      <div class="form-group">
+        <label class="form-label">실물품명 (I열)</label>
+        <input id="add_itemName" class="form-input" placeholder="품명">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:11px" onclick="addRow()">추가하기</button>
+  </div>
+
+  <div id="listContainer" class="list-container">
+    <div class="empty"><div class="empty-icon">📋</div>데이터를 불러오는 중...</div>
+  </div>
+</div>
+
+<!-- ── 전체 목록 탭 ── -->
+<div id="page-all" class="page">
+  <div class="search-bar">
+    <input id="searchAll" type="text" placeholder="검색..." oninput="renderAll()">
+  </div>
+  <div id="allContainer" class="list-container">
+    <div class="empty"><div class="empty-icon">📋</div>탭을 클릭하면 로드됩니다.</div>
+  </div>
+</div>
+
+<!-- ── 재고조회 탭 ── -->
+<div id="page-stock" class="page">
+  <div class="search-bar">
+    <input id="searchStock" type="text" placeholder="SKU / 품명 검색..." oninput="renderStock()">
+    <button class="btn btn-ghost" onclick="loadStock()">↺</button>
+  </div>
+  <div id="stockContainer" class="list-container">
+    <div class="empty"><div class="empty-icon">📦</div>탭을 클릭하면 로드됩니다.</div>
+  </div>
+</div>
+
+<!-- ── 설정 탭 ── -->
+<div id="page-settings" class="page">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="form-group">
+      <label class="form-label">GAS WebApp URL</label>
+      <input id="cfg_url" class="form-input" placeholder="https://script.google.com/macros/s/..." value="">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Secret Token</label>
+      <input id="cfg_token" class="form-input" type="password" placeholder="GAS setupWebApp()으로 생성한 토큰" value="">
+    </div>
+    <div class="form-group">
+      <label class="form-label">재고 시트 GAS URL (선택, 별도 배포 시)</label>
+      <input id="cfg_stockUrl" class="form-input" placeholder="기본: 위 URL과 동일" value="">
+    </div>
+    <button class="btn btn-primary" style="padding:12px" onclick="saveSettings()">설정 저장</button>
+    <button class="btn btn-ghost" style="padding:12px" onclick="testConnection()">연결 테스트</button>
+    <div id="connStatus" style="font-size:12px;color:var(--muted);text-align:center"></div>
+  </div>
+</div>
+
+<!-- ── 상세 패널 ── -->
+<div id="detailOverlay" class="detail-overlay" onclick="closeDetail(event)">
+  <div class="detail-panel">
+    <div class="detail-handle"></div>
+    <div id="detailTitle" class="detail-title">상세 정보</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">입력번호</label>
+        <div style="display:flex;gap:6px">
+          <input id="d_orderNo" class="form-input" readonly style="flex:1">
+          <button class="btn btn-primary" style="padding:10px 12px;font-size:13px" onclick="openOcr()">📷</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">처리상태</label>
+        <input id="d_status" class="form-input" readonly>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">전산품번</label>
+        <input id="d_sku" class="form-input" readonly>
+      </div>
+      <div class="form-group">
+        <label class="form-label">실물품번(C열)</label>
+        <input id="d_realSku" class="form-input" placeholder="입력">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">실수량(E열)</label>
+        <input id="d_qty" class="form-input" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">로케이션(F열)</label>
+        <input id="d_loc" class="form-input" placeholder="A-01">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">상태(G열)</label>
+        <input id="d_itemStatus" class="form-input" placeholder="정상:A">
+      </div>
+      <div class="form-group">
+        <label class="form-label">실물품명(I열)</label>
+        <input id="d_itemName" class="form-input" placeholder="품명">
+      </div>
+    </div>
+
+    <!-- 사진 뷰어 -->
+    <div class="form-group" id="photoGroup">
+      <label class="form-label">송장사진</label>
+      <div id="photoViewer" style="
+        width:100%; min-height:160px; background:#f8f9fc;
+        border-radius:8px; border:1px solid var(--border);
+        display:flex; align-items:center; justify-content:center;
+        overflow:hidden; position:relative;">
+        <span id="photoHint" style="color:var(--muted);font-size:13px">사진 없음</span>
+        <img id="photoImg" style="display:none;width:100%;height:auto;border-radius:8px;cursor:pointer"
+             onclick="openPhotoFull(this.src)">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <label style="flex:1;cursor:pointer">
+          <input type="file" accept="image/*" capture="environment" style="display:none"
+                 onchange="handleDetailPhoto(event)">
+          <div class="btn btn-primary" style="width:100%;text-align:center;padding:10px">📷 사진 촬영</div>
+        </label>
+        <label style="flex:1;cursor:pointer">
+          <input type="file" accept="image/*" style="display:none"
+                 onchange="handleDetailPhoto(event)">
+          <div class="btn btn-ghost" style="width:100%;text-align:center;padding:10px">🖼 갤러리</div>
+        </label>
+      </div>
+    </div>
+
+    <div class="detail-actions">
+      <button class="btn btn-ghost" onclick="deleteRow()">🗑 삭제</button>
+      <button class="btn btn-yellow" onclick="saveRow()">💾 저장</button>
+      <button id="checkBtn" class="btn btn-green" onclick="toggleCheck()">✅ 입고완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── OCR 모달 ── -->
+<div id="ocrModal" class="ocr-modal" onclick="closeOcr(event)">
+  <div class="ocr-box" onclick="event.stopPropagation()">
+    <h3>📷 송장번호 OCR</h3>
+    <div class="ocr-preview" id="ocrPreview">
+      <span id="ocrHint">카메라 또는 사진을 선택하세요</span>
+      <img id="ocrImg" style="display:none">
+      <input type="file" accept="image/*" capture="environment" onchange="handleOcrFile(event)">
+    </div>
+    <div class="ocr-result" id="ocrResult">—</div>
+    <div class="ocr-actions">
+      <button class="btn btn-ghost" onclick="closeOcr()">취소</button>
+      <button class="btn btn-primary" onclick="runOcr()">인식 실행</button>
+      <button class="btn btn-green" id="ocrApplyBtn" style="display:none" onclick="applyOcrResult()">적용</button>
+    </div>
+  </div>
+</div>
+
+<!-- 사진 풀스크린 -->
+<div id="photoModal" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.92);
+  z-index:400; align-items:center; justify-content:center; padding:16px;"
+  onclick="this.style.display='none'">
+  <img id="photoModalImg" style="max-width:100%;max-height:90vh;border-radius:8px;object-fit:contain">
+</div>
+
+<!-- 로딩 -->
+<div id="loading" class="loading">
+  <div class="loading-box">⌛ 처리 중...</div>
+</div>
+
+<!-- 토스트 -->
+<div id="toast" class="toast"></div>
+
+<script>
+// ===== 설정 =====
+let CFG = {
+  url: "https://script.google.com/macros/s/AKfycbwpJ5HEp4boKPH2LtNkzV_Quah7VdxcvbQ332fb1OLh1JUYMJ_KvpB-WGH2bMBU-g-f/exec",
+  token: "908f6262-b7ed-45a1-a919-da830f62f8da",
+  stockUrl: ""
+};
+let allData    = [];
+let stockData  = [];
+let currentRow = null;
+let ocrBase64  = null;
+let ocrMime    = null;
+
+// 로컬스토리지에서 설정 로드
+function loadSettings() {
+  const saved = localStorage.getItem("검수판독_cfg");
+  if (saved) CFG = { ...CFG, ...JSON.parse(saved) };
+  document.getElementById("cfg_url").value   = CFG.url   || "";
+  document.getElementById("cfg_token").value = CFG.token || "";
+  document.getElementById("cfg_stockUrl").value = CFG.stockUrl || "";
+}
+
+function saveSettings() {
+  CFG.url      = document.getElementById("cfg_url").value.trim();
+  CFG.token    = document.getElementById("cfg_token").value.trim();
+  CFG.stockUrl = document.getElementById("cfg_stockUrl").value.trim();
+  localStorage.setItem("검수판독_cfg", JSON.stringify(CFG));
+  showToast("설정이 저장되었습니다.", "success");
+}
+
+async function testConnection() {
+  if (!CFG.url || !CFG.token) { showToast("URL과 Token을 먼저 입력하세요.", "error"); return; }
+  showLoading(true);
+  try {
+    const res = await gasGet({ action: "list", filter: "pending" });
+    document.getElementById("connStatus").textContent = `✅ 연결 성공 (${res.data.length}건)`;
+    showToast("연결 성공!", "success");
+  } catch(e) {
+    document.getElementById("connStatus").textContent = "❌ " + e.message;
+    showToast("연결 실패: " + e.message, "error");
+  }
+  showLoading(false);
+}
+
+// ===== API 호출 =====
+async function gasGet(params) {
+  const url = new URL(CFG.url);
+  url.searchParams.set("token", CFG.token);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+
+  const res  = await fetch(url.toString());
+  const json = await res.json();
+  if (json.status === "error") throw new Error(json.message);
+  return json;
+}
+
+async function gasPost(body) {
+  const res = await fetch(CFG.url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...body, token: CFG.token })
+  });
+  const json = await res.json();
+  if (json.status === "error") throw new Error(json.message);
+  return json;
+}
+
+// ===== 탭 전환 =====
+function switchTab(name, btn) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("page-" + name).classList.add("active");
+
+  if (name === "list" && allData.length === 0) refreshList();
+  if (name === "all")   renderAll();
+  if (name === "stock") loadStock();
+}
+
+// ===== 리스트 로드 =====
+async function refreshList() {
+  if (!CFG.url) { showToast("설정 탭에서 GAS URL을 먼저 입력하세요.", "error"); return; }
+  showLoading(true);
+  try {
+    const res = await gasGet({ action: "list" });
+    allData = res.data || [];
+    renderList();
+    renderAll();
+    updateBadge();
+  } catch(e) {
+    showToast("불러오기 실패: " + e.message, "error");
+  }
+  showLoading(false);
+}
+
+function updateBadge() {
+  const pending = allData.filter(r => {
+    const orderNo = String(getColVal(r, "입력번호", "A") || "").trim();
+    const k = String(getColVal(r, "수정대상", "수정대상(K)") || "").trim();
+    const m = String(getColVal(r, "처리상태(M)", "처리상태") || "").trim();
+    if (!orderNo || orderNo === "내용없음") return false;
+    return k === "" && m === "";
+  }).length;
+  const badge = document.getElementById("pendingBadge");
+  badge.textContent = pending;
+  badge.style.display = pending > 0 ? "inline" : "none";
+}
+
+function getColVal(row, ...keys) {
+  for (const k of keys) { if (row[k] !== undefined && row[k] !== "") return row[k]; }
+  return "";
+}
+
+function renderList() {
+  const q = document.getElementById("searchList").value.trim().toLowerCase();
+  const pending = allData.filter(r => {
+    const orderNo = String(getColVal(r, "입력번호", "A") || "").trim();
+    const k = String(getColVal(r, "수정대상", "수정대상(K)") || "").trim();
+    const m = String(getColVal(r, "처리상태(M)", "처리상태") || "").trim();
+    if (!orderNo || orderNo === "내용없음") return false;
+    return k === "" && m === "";
+  });
+  renderCards("listContainer", pending, q);
+}
+
+function renderAll() {
+  const q = document.getElementById("searchAll").value.trim().toLowerCase();
+  renderCards("allContainer", allData, q);
+}
+
+function renderCards(containerId, data, query) {
+  const container = document.getElementById(containerId);
+  let filtered = data;
+  if (query) {
+    filtered = data.filter(r => {
+      const text = [
+        getColVal(r, "입력번호", "A"),
+        getColVal(r, "전산품번", "C"),
+        getColVal(r, "실물품명(I)", "실물품명", "I"),
+      ].join(" ").toLowerCase();
+      return text.includes(query);
+    });
+  }
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div>항목이 없습니다.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(r => {
+    const orderNo  = getColVal(r, "입력번호", "A") || "(번호없음)";
+    const sku      = getColVal(r, "전산품번", "C") || "";
+    const qty      = getColVal(r, "실수량(E)", "실수량", "E") || "";
+    const loc      = getColVal(r, "로케이션(F)", "로케이션", "F") || "";
+    const itemName = getColVal(r, "실물품명(I)", "실물품명", "I") || "";
+    const photoVal = getColVal(r, "송장사진", "사진", "photo") || "";
+    const rawStatus = String(getColVal(r, "처리상태(M)", "처리상태") || "").trim();
+
+    let cardClass = "item-card";
+    let statusClass = "pending";
+    let statusText  = rawStatus || "미처리";
+    if (rawStatus === "✅ 입고완료") { cardClass += " done"; statusClass = "done"; }
+    else if (rawStatus === "↩️ 재고원복") { cardClass += " reverted"; statusClass = "reverted"; }
+
+    const isDone = rawStatus === "✅ 입고완료";
+
+    // 썸네일: 드라이브 URL이면 표시, 아니면 플레이스홀더
+    const hasPhoto = photoVal && photoVal.includes("drive.google.com");
+    const thumbHtml = hasPhoto
+      ? `<div class="card-thumb"><img src="${photoVal.replace('/view','/preview')}" onerror="this.parentNode.innerHTML='<span class=card-thumb-placeholder>📷</span>'"></div>`
+      : `<div class="card-thumb"><span class="card-thumb-placeholder">📷</span></div>`;
+
+    return `<div class="${cardClass}" onclick="openDetail(${r._rowIndex})">
+      ${thumbHtml}
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-order">${orderNo}</span>
+          <span class="card-status ${statusClass}">${statusText}</span>
+        </div>
+        ${itemName ? `<div class="card-name">${itemName}</div>` : ""}
+        <div class="card-info">
+          ${sku ? `<span>SKU: ${sku}</span>` : ""}
+          ${qty ? `<span>수량: ${qty}</span>` : ""}
+          ${loc ? `<span>${loc}</span>` : ""}
+        </div>
+      </div>
+      <div class="check-toggle ${isDone ? "checked" : ""}"
+           onclick="event.stopPropagation(); quickCheck(${r._rowIndex}, ${isDone})">
+        ${isDone ? "✓" : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ===== 상세패널 사진 촬영/업로드 =====
+async function handleDetailPhoto(e) {
+  const file = e.target.files[0];
+  if (!file || !currentRow) return;
+
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const dataUrl  = ev.target.result;
+    const base64   = dataUrl.split(",")[1];
+    const mimeType = file.type || "image/jpeg";
+
+    // 미리보기
+    const img  = document.getElementById("photoImg");
+    const hint = document.getElementById("photoHint");
+    img.src           = dataUrl;
+    img.style.display = "block";
+    hint.style.display = "none";
+
+    // 드라이브 업로드
+    showLoading(true);
+    try {
+      const fileName = `${getColVal(currentRow, "입력번호", "A") || "photo"}_${Date.now()}.jpg`;
+      const res = await gasPost({
+        action: "uploadPhoto",
+        imageBase64: base64,
+        mimeType,
+        fileName,
+        rowIndex: currentRow._rowIndex
+      });
+      showToast("사진 저장 완료", "success");
+      // currentRow P열 업데이트
+      currentRow["송장사진"] = res.data.url;
+    } catch(err) {
+      showToast("사진 업로드 실패: " + err.message, "error");
+    }
+    showLoading(false);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== 사진 로딩 (GAS 프록시) =====
+async function loadDetailPhoto({ url, photoId }) {
+  try {
+    const reqUrl = new URL(CFG.url);
+    reqUrl.searchParams.set("token", CFG.token);
+    reqUrl.searchParams.set("action", "getImage");
+    if (photoId) reqUrl.searchParams.set("photoId", photoId);
+    else         reqUrl.searchParams.set("url", url);
+
+    const res  = await fetch(reqUrl.toString());
+    const json = await res.json();
+    if (json.status === "error") throw new Error(json.message);
+
+    const src = `data:${json.data.mimeType};base64,${json.data.base64}`;
+    const img  = document.getElementById("photoImg");
+    const hint = document.getElementById("photoHint");
+    img.src            = src;
+    img.style.display  = "block";
+    hint.style.display = "none";
+  } catch(e) {
+    document.getElementById("photoHint").textContent = "사진 없음";
+  }
+}
+
+function openPhotoFull(src) {
+  const modal = document.getElementById("photoModal");
+  document.getElementById("photoModalImg").src = src;
+  modal.style.display = "flex";
+}
+
+// ===== 빠른 체크 (리스트에서 직접) =====
+async function quickCheck(rowIndex, isDone) {
+  showLoading(true);
+  try {
+    const action = isDone ? "checkUndo" : "checkIn";
+    await gasPost({ action, rowIndex });
+    showToast(isDone ? "재고 원복 완료" : "입고완료 처리!", "success");
+    await refreshList();
+  } catch(e) {
+    showToast(e.message, "error");
+  }
+  showLoading(false);
+}
+
+// ===== 상세 패널 =====
+function openDetail(rowIndex) {
+  const row = allData.find(r => r._rowIndex === rowIndex);
+  if (!row) return;
+  currentRow = row;
+
+  document.getElementById("detailTitle").textContent
+    = (getColVal(row, "입력번호") || "상세 정보") + " 상세";
+
+  document.getElementById("d_orderNo").value   = getColVal(row, "입력번호", "A") || "";
+  document.getElementById("d_status").value    = getColVal(row, "처리상태(M)", "처리상태") || "";
+  document.getElementById("d_sku").value       = getColVal(row, "전산품번", "C") || "";
+  document.getElementById("d_realSku").value   = getColVal(row, "실물품번(C)", "실물품번") || "";
+  document.getElementById("d_qty").value       = getColVal(row, "실수량(E)", "실수량", "E") || "";
+  document.getElementById("d_loc").value       = getColVal(row, "로케이션(F)", "로케이션", "F") || "";
+  document.getElementById("d_itemStatus").value= getColVal(row, "상태(G)", "상태") || "";
+  document.getElementById("d_itemName").value  = getColVal(row, "실물품명(I)", "실물품명", "I") || "";
+
+  const isDone = String(getColVal(row, "처리상태(M)", "처리상태")).trim() === "✅ 입고완료";
+  const btn = document.getElementById("checkBtn");
+  btn.textContent = isDone ? "↩️ 원복" : "✅ 입고완료";
+  btn.className   = isDone ? "btn btn-yellow" : "btn btn-green";
+
+  // 사진 뷰어 - N열 ID 또는 P열 URL로 로드
+  const photoUrl = getColVal(row, "송장사진", "사진", "photo") || "";
+  const photoId  = getColVal(row, "ID") || "";
+  const photoGroup = document.getElementById("photoGroup");
+  const photoImg   = document.getElementById("photoImg");
+  const photoHint  = document.getElementById("photoHint");
+  photoGroup.style.display = "block";
+  photoImg.style.display   = "none";
+  photoHint.style.display  = "block";
+
+  if (photoUrl === "삭제됨") {
+    photoHint.textContent = "삭제된 사진";
+  } else if (photoUrl && photoUrl.includes("drive.google.com")) {
+    photoHint.textContent = "사진 불러오는 중...";
+    loadDetailPhoto({ url: photoUrl });
+  } else if (photoId) {
+    photoHint.textContent = "사진 불러오는 중...";
+    loadDetailPhoto({ photoId });
+  } else {
+    photoHint.textContent = "사진 없음 — 아래 버튼으로 촬영";
+  }
+
+  document.getElementById("detailOverlay").classList.add("open");
+}
+
+function closeDetail(e) {
+  if (!e || e.target.id === "detailOverlay") {
+    document.getElementById("detailOverlay").classList.remove("open");
+    currentRow = null;
+  }
+}
+
+async function saveRow() {
+  if (!currentRow) return;
+  showLoading(true);
+  try {
+    // 열 인덱스 매핑 (1-based): C=3, D=4, E=5, F=6, G=7, I=9
+    const updates = {
+      4:  document.getElementById("d_realSku").value,   // D열 실물품번
+      5:  document.getElementById("d_qty").value,        // E열 실수량
+      6:  document.getElementById("d_loc").value,        // F열 로케이션
+      7:  document.getElementById("d_itemStatus").value, // G열 상태
+      9:  document.getElementById("d_itemName").value    // I열 실물품명
+    };
+    await gasPost({ action: "updateRow", rowIndex: currentRow._rowIndex, updates });
+    showToast("저장되었습니다.", "success");
+    document.getElementById("detailOverlay").classList.remove("open");
+    await refreshList();
+  } catch(e) {
+    showToast(e.message, "error");
+  }
+  showLoading(false);
+}
+
+async function toggleCheck() {
+  if (!currentRow) return;
+  const isDone = String(getColVal(currentRow, "처리상태(M)", "처리상태")).trim() === "✅ 입고완료";
+  showLoading(true);
+  try {
+    await gasPost({ action: isDone ? "checkUndo" : "checkIn", rowIndex: currentRow._rowIndex });
+    showToast(isDone ? "재고 원복 완료" : "입고완료 처리!", "success");
+    document.getElementById("detailOverlay").classList.remove("open");
+    await refreshList();
+  } catch(e) {
+    showToast(e.message, "error");
+  }
+  showLoading(false);
+}
+
+async function deleteRow() {
+  if (!currentRow) return;
+  if (!confirm("정말 삭제하시겠습니까?")) return;
+  showLoading(true);
+  try {
+    await gasPost({ action: "deleteRow", rowIndex: currentRow._rowIndex });
+    showToast("삭제되었습니다.", "success");
+    document.getElementById("detailOverlay").classList.remove("open");
+    await refreshList();
+  } catch(e) {
+    showToast(e.message, "error");
+  }
+  showLoading(false);
+}
+
+// ===== 새 행 추가 =====
+function toggleAddForm() {
+  document.getElementById("addForm").classList.toggle("open");
+}
+
+async function addRow() {
+  const orderNo  = document.getElementById("add_orderNo").value.trim();
+  const sku      = document.getElementById("add_sku").value.trim();
+  const qty      = document.getElementById("add_qty").value.trim();
+  const loc      = document.getElementById("add_loc").value.trim();
+  const status   = document.getElementById("add_status").value.trim();
+  const itemName = document.getElementById("add_itemName").value.trim();
+
+  if (!orderNo) { showToast("입력번호를 입력하세요.", "error"); return; }
+
+  // 14칸 배열 (A~N열)
+  const values = [
+    orderNo, "", sku, "", Number(qty)||0,
+    loc, status, "", itemName, false, "", "", "", ""
+  ];
+
+  showLoading(true);
+  try {
+    await gasPost({ action: "addRow", values });
+    showToast("추가 완료!", "success");
+    document.getElementById("add_orderNo").value = "";
+    document.getElementById("add_sku").value = "";
+    document.getElementById("add_qty").value = "";
+    document.getElementById("add_loc").value = "";
+    document.getElementById("add_status").value = "";
+    document.getElementById("add_itemName").value = "";
+    toggleAddForm();
+    await refreshList();
+  } catch(e) {
+    showToast(e.message, "error");
+  }
+  showLoading(false);
+}
+
+// ===== 추가 폼 OCR =====
+async function handleAddFormOcr(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const base64   = ev.target.result.split(",")[1];
+    const mimeType = file.type || "image/jpeg";
+    showLoading(true);
+    try {
+      const res = await gasPost({ action: "ocr", imageBase64: base64, mimeType });
+      const no  = res.data.trackingNo || "";
+      if (no) {
+        document.getElementById("add_orderNo").value = no;
+        showToast("송장번호 인식: " + no, "success");
+      } else {
+        showToast("인식 실패 - 수동 입력하세요", "error");
+      }
+    } catch(err) {
+      showToast("OCR 오류: " + err.message, "error");
+    }
+    showLoading(false);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== 재고조회 =====
+async function loadStock() {
+  const stockUrl = CFG.stockUrl || CFG.url;
+  if (!stockUrl) return;
+  showLoading(true);
+  try {
+    // 재고조회는 별도 GAS 배포 or 동일 GAS에서 재고시트 데이터 반환
+    // 여기서는 list action으로 재고조회 시트 데이터 활용
+    // (필요 시 GAS에 action=stockList 별도 추가 가능)
+    document.getElementById("stockContainer").innerHTML =
+      `<div class="empty"><div class="empty-icon">🔧</div>재고조회는 GAS에 action=stockList 추가 후 사용 가능합니다.</div>`;
+  } catch(e) {
+    showToast(e.message, "error");
+  }
+  showLoading(false);
+}
+
+function renderStock() {}
+
+// ===== OCR =====
+function openOcr() {
+  ocrBase64 = null; ocrMime = null;
+  document.getElementById("ocrResult").textContent = "—";
+  document.getElementById("ocrImg").style.display = "none";
+  document.getElementById("ocrHint").style.display = "block";
+  document.getElementById("ocrApplyBtn").style.display = "none";
+  document.getElementById("ocrModal").classList.add("open");
+}
+
+function closeOcr(e) {
+  if (!e || e.target.id === "ocrModal") {
+    document.getElementById("ocrModal").classList.remove("open");
+  }
+}
+
+function handleOcrFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  ocrMime = file.type || "image/jpeg";
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    ocrBase64 = dataUrl.split(",")[1];
+    const img = document.getElementById("ocrImg");
+    img.src = dataUrl;
+    img.style.display = "block";
+    document.getElementById("ocrHint").style.display = "none";
+  };
+  reader.readAsDataURL(file);
+}
+
+async function runOcr() {
+  if (!ocrBase64) { showToast("이미지를 먼저 선택하세요.", "error"); return; }
+  showLoading(true);
+  try {
+    const res = await gasPost({ action: "ocr", imageBase64: ocrBase64, mimeType: ocrMime });
+    const no = res.data.trackingNo || "";
+    document.getElementById("ocrResult").textContent = no || "인식 실패";
+    if (no) document.getElementById("ocrApplyBtn").style.display = "block";
+  } catch(e) {
+    document.getElementById("ocrResult").textContent = "오류: " + e.message;
+  }
+  showLoading(false);
+}
+
+function applyOcrResult() {
+  const no = document.getElementById("ocrResult").textContent;
+  if (currentRow) {
+    // 상세패널이 열려있으면 거기 적용
+    document.getElementById("d_orderNo").removeAttribute("readonly");
+    document.getElementById("d_orderNo").value = no;
+    document.getElementById("d_orderNo").setAttribute("readonly", true);
+    showToast("상세패널 입력번호에 적용되었습니다.", "success");
+  } else {
+    // 수기 추가 폼에 적용
+    if (!document.getElementById("addForm").classList.contains("open")) toggleAddForm();
+    document.getElementById("add_orderNo").value = no;
+    showToast("입력번호에 적용되었습니다.", "success");
+  }
+  document.getElementById("ocrModal").classList.remove("open");
+}
+
+// ===== UI 유틸 =====
+function showLoading(show) {
+  document.getElementById("loading").classList.toggle("show", show);
+}
+
+let toastTimer = null;
+function showToast(msg, type) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "toast show" + (type ? " " + type : "");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+}
+
+// ===== 초기화 =====
+loadSettings();
+if (CFG.url && CFG.token) refreshList();
+</script>
+</body>
+</html>
