@@ -6,16 +6,16 @@
 <title>검수판독</title>
 <style>
   :root {
-    --bg:       #0f1117;
-    --surface:  #1a1d27;
-    --card:     #22263a;
-    --border:   #2e3350;
-    --accent:   #4f8ef7;
-    --green:    #34c97e;
-    --yellow:   #f5c842;
-    --red:      #f25c5c;
-    --text:     #e8eaf2;
-    --muted:    #7a7f9a;
+    --bg:       #f0f2f5;
+    --surface:  #ffffff;
+    --card:     #ffffff;
+    --border:   #e0e4ee;
+    --accent:   #3b6ef6;
+    --green:    #1db870;
+    --yellow:   #f0a500;
+    --red:      #e53935;
+    --text:     #1a1d2e;
+    --muted:    #6b7280;
     --radius:   12px;
     --font:     'Pretendard', 'Noto Sans KR', sans-serif;
   }
@@ -107,63 +107,92 @@
   .btn-ghost   { background: var(--card);   color: var(--text); border: 1px solid var(--border); }
 
   /* ── 카드 리스트 ── */
-  .list-container { display: flex; flex-direction: column; gap: 8px; }
+  .list-container { display: flex; flex-direction: column; gap: 10px; }
 
   .item-card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 12px 14px;
+    padding: 0;
     cursor: pointer;
-    transition: border-color .15s;
+    transition: box-shadow .15s;
     position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
   }
-  .item-card:active { border-color: var(--accent); }
-  .item-card.done   { border-left: 3px solid var(--green); opacity: .7; }
-  .item-card.reverted { border-left: 3px solid var(--yellow); }
+  .item-card:active { box-shadow: 0 0 0 2px var(--accent); }
+  .item-card.done   { border-left: 4px solid var(--green); }
+  .item-card.reverted { border-left: 4px solid var(--yellow); }
+
+  /* 사진 썸네일 영역 */
+  .card-thumb {
+    width: 72px;
+    min-height: 80px;
+    background: #f5f6fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+  .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .card-thumb-placeholder { font-size: 28px; color: #c5cad8; }
+
+  /* 카드 내용 */
+  .card-body {
+    flex: 1;
+    padding: 11px 12px;
+    min-width: 0;
+  }
 
   .card-top {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 8px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
-  .card-order { font-weight: 700; font-size: 15px; }
+  .card-order { font-weight: 700; font-size: 15px; color: var(--text); }
   .card-status {
     font-size: 11px;
     padding: 3px 8px;
     border-radius: 20px;
-    background: var(--surface);
     white-space: nowrap;
+    font-weight: 600;
   }
-  .card-status.done    { background: rgba(52,201,126,.15); color: var(--green); }
-  .card-status.pending { background: rgba(79,142,247,.15); color: var(--accent); }
-  .card-status.reverted{ background: rgba(245,200,66,.15); color: var(--yellow); }
+  .card-status.done    { background: #e6f9ef; color: var(--green); }
+  .card-status.pending { background: #eef2ff; color: var(--accent); }
+  .card-status.reverted{ background: #fff8e6; color: var(--yellow); }
 
-  .card-info { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--muted); }
-  .card-info span { background: var(--surface); padding: 2px 7px; border-radius: 4px; }
+  .card-name { font-size: 13px; color: var(--text); margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-info { display: flex; flex-wrap: wrap; gap: 5px; font-size: 11px; color: var(--muted); }
+  .card-info span { background: #f5f6fa; padding: 2px 7px; border-radius: 4px; }
 
   /* ── 체크 토글 ── */
   .check-toggle {
     position: absolute;
-    right: 14px;
-    bottom: 12px;
+    right: 12px;
+    bottom: 10px;
     width: 28px;
     height: 28px;
     border-radius: 50%;
     border: 2px solid var(--border);
-    background: var(--surface);
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     font-size: 14px;
     transition: all .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
   }
   .check-toggle.checked {
     background: var(--green);
     border-color: var(--green);
+    color: #fff;
   }
 
   /* ── 상세 패널 (슬라이드업) ── */
@@ -201,10 +230,10 @@
   .detail-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
 
   .form-group { margin-bottom: 14px; }
-  .form-label { font-size: 12px; color: var(--muted); margin-bottom: 5px; display: block; }
+  .form-label { font-size: 12px; color: var(--muted); margin-bottom: 5px; display: block; font-weight: 600; }
   .form-input {
     width: 100%;
-    background: var(--card);
+    background: #f8f9fc;
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 10px 12px;
@@ -212,8 +241,8 @@
     font-size: 14px;
     outline: none;
   }
-  .form-input:focus { border-color: var(--accent); }
-  .form-input[readonly] { color: var(--muted); cursor: default; }
+  .form-input:focus { border-color: var(--accent); background: #fff; }
+  .form-input[readonly] { color: var(--muted); cursor: default; background: #f0f2f5; }
 
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
@@ -492,7 +521,10 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">입력번호</label>
-        <input id="d_orderNo" class="form-input" readonly>
+        <div style="display:flex;gap:6px">
+          <input id="d_orderNo" class="form-input" readonly style="flex:1">
+          <button class="btn btn-primary" style="padding:10px 12px;font-size:13px" onclick="openOcr()">📷</button>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">처리상태</label>
@@ -531,16 +563,28 @@
     </div>
 
     <!-- 사진 뷰어 -->
-    <div class="form-group" id="photoGroup" style="display:none">
-      <label class="form-label">첨부 사진</label>
+    <div class="form-group" id="photoGroup">
+      <label class="form-label">송장사진</label>
       <div id="photoViewer" style="
-        width:100%; min-height:160px; background:var(--card);
+        width:100%; min-height:160px; background:#f8f9fc;
         border-radius:8px; border:1px solid var(--border);
         display:flex; align-items:center; justify-content:center;
         overflow:hidden; position:relative;">
-        <span id="photoHint" style="color:var(--muted);font-size:13px">사진 불러오는 중...</span>
+        <span id="photoHint" style="color:var(--muted);font-size:13px">사진 없음</span>
         <img id="photoImg" style="display:none;width:100%;height:auto;border-radius:8px;cursor:pointer"
              onclick="openPhotoFull(this.src)">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <label style="flex:1;cursor:pointer">
+          <input type="file" accept="image/*" capture="environment" style="display:none"
+                 onchange="handleDetailPhoto(event)">
+          <div class="btn btn-primary" style="width:100%;text-align:center;padding:10px">📷 사진 촬영</div>
+        </label>
+        <label style="flex:1;cursor:pointer">
+          <input type="file" accept="image/*" style="display:none"
+                 onchange="handleDetailPhoto(event)">
+          <div class="btn btn-ghost" style="width:100%;text-align:center;padding:10px">🖼 갤러리</div>
+        </label>
       </div>
     </div>
 
@@ -588,7 +632,11 @@
 
 <script>
 // ===== 설정 =====
-let CFG = { url: "", token: "", stockUrl: "" };
+let CFG = {
+  url: "https://script.google.com/macros/s/AKfycbwpJ5HEp4boKPH2LtNkzV_Quah7VdxcvbQ332fb1OLh1JUYMJ_KvpB-WGH2bMBU-g-f/exec",
+  token: "908f6262-b7ed-45a1-a919-da830f62f8da",
+  stockUrl: ""
+};
 let allData    = [];
 let stockData  = [];
 let currentRow = null;
@@ -598,12 +646,10 @@ let ocrMime    = null;
 // 로컬스토리지에서 설정 로드
 function loadSettings() {
   const saved = localStorage.getItem("검수판독_cfg");
-  if (saved) {
-    CFG = { ...CFG, ...JSON.parse(saved) };
-    document.getElementById("cfg_url").value   = CFG.url   || "";
-    document.getElementById("cfg_token").value = CFG.token || "";
-    document.getElementById("cfg_stockUrl").value = CFG.stockUrl || "";
-  }
+  if (saved) CFG = { ...CFG, ...JSON.parse(saved) };
+  document.getElementById("cfg_url").value   = CFG.url   || "";
+  document.getElementById("cfg_token").value = CFG.token || "";
+  document.getElementById("cfg_stockUrl").value = CFG.stockUrl || "";
 }
 
 function saveSettings() {
@@ -681,8 +727,10 @@ async function refreshList() {
 
 function updateBadge() {
   const pending = allData.filter(r => {
-    const k = String(getColVal(r, "수정대상(K)", "수정대상") || "").trim();
+    const orderNo = String(getColVal(r, "입력번호", "A") || "").trim();
+    const k = String(getColVal(r, "수정대상", "수정대상(K)") || "").trim();
     const m = String(getColVal(r, "처리상태(M)", "처리상태") || "").trim();
+    if (!orderNo || orderNo === "내용없음") return false;
     return k === "" && m === "";
   }).length;
   const badge = document.getElementById("pendingBadge");
@@ -698,8 +746,10 @@ function getColVal(row, ...keys) {
 function renderList() {
   const q = document.getElementById("searchList").value.trim().toLowerCase();
   const pending = allData.filter(r => {
-    const k = String(getColVal(r, "수정대상(K)", "수정대상") || "").trim();
+    const orderNo = String(getColVal(r, "입력번호", "A") || "").trim();
+    const k = String(getColVal(r, "수정대상", "수정대상(K)") || "").trim();
     const m = String(getColVal(r, "처리상태(M)", "처리상태") || "").trim();
+    if (!orderNo || orderNo === "내용없음") return false;
     return k === "" && m === "";
   });
   renderCards("listContainer", pending, q);
@@ -735,6 +785,7 @@ function renderCards(containerId, data, query) {
     const qty      = getColVal(r, "실수량(E)", "실수량", "E") || "";
     const loc      = getColVal(r, "로케이션(F)", "로케이션", "F") || "";
     const itemName = getColVal(r, "실물품명(I)", "실물품명", "I") || "";
+    const photoVal = getColVal(r, "송장사진", "사진", "photo") || "";
     const rawStatus = String(getColVal(r, "처리상태(M)", "처리상태") || "").trim();
 
     let cardClass = "item-card";
@@ -745,16 +796,25 @@ function renderCards(containerId, data, query) {
 
     const isDone = rawStatus === "✅ 입고완료";
 
+    // 썸네일: 드라이브 URL이면 표시, 아니면 플레이스홀더
+    const hasPhoto = photoVal && photoVal.includes("drive.google.com");
+    const thumbHtml = hasPhoto
+      ? `<div class="card-thumb"><img src="${photoVal.replace('/view','/preview')}" onerror="this.parentNode.innerHTML='<span class=card-thumb-placeholder>📷</span>'"></div>`
+      : `<div class="card-thumb"><span class="card-thumb-placeholder">📷</span></div>`;
+
     return `<div class="${cardClass}" onclick="openDetail(${r._rowIndex})">
-      <div class="card-top">
-        <span class="card-order">${orderNo}</span>
-        <span class="card-status ${statusClass}">${statusText}</span>
-      </div>
-      <div class="card-info">
-        ${sku ? `<span>SKU: ${sku}</span>` : ""}
-        ${qty ? `<span>수량: ${qty}</span>` : ""}
-        ${loc ? `<span>로케: ${loc}</span>` : ""}
-        ${itemName ? `<span>${itemName}</span>` : ""}
+      ${thumbHtml}
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-order">${orderNo}</span>
+          <span class="card-status ${statusClass}">${statusText}</span>
+        </div>
+        ${itemName ? `<div class="card-name">${itemName}</div>` : ""}
+        <div class="card-info">
+          ${sku ? `<span>SKU: ${sku}</span>` : ""}
+          ${qty ? `<span>수량: ${qty}</span>` : ""}
+          ${loc ? `<span>${loc}</span>` : ""}
+        </div>
       </div>
       <div class="check-toggle ${isDone ? "checked" : ""}"
            onclick="event.stopPropagation(); quickCheck(${r._rowIndex}, ${isDone})">
@@ -762,6 +822,46 @@ function renderCards(containerId, data, query) {
       </div>
     </div>`;
   }).join("");
+}
+
+// ===== 상세패널 사진 촬영/업로드 =====
+async function handleDetailPhoto(e) {
+  const file = e.target.files[0];
+  if (!file || !currentRow) return;
+
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const dataUrl  = ev.target.result;
+    const base64   = dataUrl.split(",")[1];
+    const mimeType = file.type || "image/jpeg";
+
+    // 미리보기
+    const img  = document.getElementById("photoImg");
+    const hint = document.getElementById("photoHint");
+    img.src           = dataUrl;
+    img.style.display = "block";
+    hint.style.display = "none";
+
+    // 드라이브 업로드
+    showLoading(true);
+    try {
+      const fileName = `${getColVal(currentRow, "입력번호", "A") || "photo"}_${Date.now()}.jpg`;
+      const res = await gasPost({
+        action: "uploadPhoto",
+        imageBase64: base64,
+        mimeType,
+        fileName,
+        rowIndex: currentRow._rowIndex
+      });
+      showToast("사진 저장 완료", "success");
+      // currentRow P열 업데이트
+      currentRow["송장사진"] = res.data.url;
+    } catch(err) {
+      showToast("사진 업로드 실패: " + err.message, "error");
+    }
+    showLoading(false);
+  };
+  reader.readAsDataURL(file);
 }
 
 // ===== 사진 로딩 (GAS 프록시) =====
@@ -835,14 +935,20 @@ function openDetail(rowIndex) {
   const photoGroup = document.getElementById("photoGroup");
   const photoImg   = document.getElementById("photoImg");
   const photoHint  = document.getElementById("photoHint");
+  photoGroup.style.display = "block";
   if (photoUrl && photoUrl.includes("drive.google.com")) {
-    photoGroup.style.display = "block";
     photoImg.style.display   = "none";
     photoHint.style.display  = "block";
     photoHint.textContent    = "사진 불러오는 중...";
     loadDetailPhoto(photoUrl);
+  } else if (photoUrl === "삭제됨") {
+    photoImg.style.display  = "none";
+    photoHint.style.display = "block";
+    photoHint.textContent   = "삭제된 사진";
   } else {
-    photoGroup.style.display = "none";
+    photoImg.style.display  = "none";
+    photoHint.style.display = "block";
+    photoHint.textContent   = "사진 없음 — 아래 버튼으로 촬영";
   }
 
   document.getElementById("detailOverlay").classList.add("open");
